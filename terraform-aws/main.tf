@@ -14,15 +14,6 @@ provider "aws" {
   region = "us-west-2"
 }
 
-resource "aws_instance" "app_server" {
-  ami           = "ami-830c94e3"
-  instance_type = "t2.micro"
-
-  tags = {
-    Name = var.instance_name
-  }
-}
-
 resource "aws_s3_bucket" "something-badabing-hello" {
   bucket        = "something-badabing-hello"
   force_destroy = true
@@ -128,7 +119,7 @@ resource "aws_apigatewayv2_integration" "hello_world" {
 resource "aws_apigatewayv2_route" "hello_world" {
   api_id = aws_apigatewayv2_api.lambda.id
 
-  route_key = "GET /index"
+  route_key = "$default"
   target    = "integrations/${aws_apigatewayv2_integration.hello_world.id}"
 }
 
@@ -146,3 +137,16 @@ resource "aws_lambda_permission" "api_gw" {
 
   source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
 }
+
+resource "aws_db_instance" "test_db" {
+  allocated_storage    = 10
+  db_name              = "mydb"
+  engine               = "postgres"
+  engine_version       = "15.2"
+  instance_class       = "db.t3.micro"
+  username             = "don"
+  password             = "dondavid"
+  skip_final_snapshot  = true
+}
+
+
