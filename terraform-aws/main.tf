@@ -14,6 +14,17 @@ provider "aws" {
   region = "us-west-2"
 }
 
+resource "aws_db_instance" "test_db" {
+  allocated_storage   = 10
+  db_name             = "mydb"
+  engine              = "postgres"
+  engine_version      = "15.2"
+  instance_class      = "db.t3.micro"
+  username            = "don"
+  password            = "dondavid"
+  skip_final_snapshot = true
+}
+
 resource "aws_s3_bucket" "something-badabing-hello" {
   bucket        = "something-badabing-hello"
   force_destroy = true
@@ -41,10 +52,17 @@ resource "aws_lambda_function" "hello_world" {
   s3_bucket = aws_s3_bucket.something-badabing-hello.id
   s3_key    = aws_s3_object.lambda_hello_world.key
 
+  timeout = 10
   runtime = "nodejs12.x"
   handler = "index.handler"
 
   source_code_hash = data.archive_file.lambda_hello_world.output_base64sha256
+
+  environment {
+    variables = {
+      DB_INSTANCE_ADDRESS = aws_db_instance.test_db.address
+    }
+  }
 
   role = aws_iam_role.lambda_exec.arn
 }
@@ -136,17 +154,6 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
-}
-
-resource "aws_db_instance" "test_db" {
-  allocated_storage    = 10
-  db_name              = "mydb"
-  engine               = "postgres"
-  engine_version       = "15.2"
-  instance_class       = "db.t3.micro"
-  username             = "don"
-  password             = "dondavid"
-  skip_final_snapshot  = true
 }
 
 
