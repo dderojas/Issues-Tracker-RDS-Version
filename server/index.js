@@ -1,31 +1,31 @@
 const { Client } = require('pg')
 
-// TODO: trying to connect to rds but connection is timing out
-module.exports.handler = async (event) => {
+const client = new Client({
+  user: 'don',
+  host: process.env.DB_INSTANCE_ADDRESS,
+  database: 'mydb',
+  password: 'dondavid',
+  port: 5432
+});
+
+module.exports.handler = async (event, callback) => {
   console.log('Event: ', event);
   let responseMessage = 'Hello, World!';
-  console.log(process.env.DB_INSTANCE_ADDRESS, 'heeellllpppp')
-  
-  const client = new Client({
-    user: 'don',
-    host: process.env.DB_INSTANCE_ADDRESS,
-    database: 'mydb',
-    password: 'dondavid',
-    port: 5432
-  });
+  console.log(process.env.DB_INSTANCE_ADDRESS, 'db instance address!')
 
-  console.log(client, 'client!@#!@#')
+
+  console.log(client, 'client info!')
   try {
-    console.log('in here????')
-    await client.connect();
-    console.log("Connected Successfully");
-    //your code here
+    client.connect((err) => {
+      if (err) callback(err);
+      else callback(null, 'Success');
+    });
 
+    console.log("Connected Successfully");
   } catch (err) {
 
       console.log("Failed to Connect Successfully");
       throw err;
-      //error message
   }
 
   client.end();

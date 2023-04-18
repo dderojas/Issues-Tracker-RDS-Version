@@ -51,8 +51,7 @@ resource "aws_lambda_function" "hello_world" {
 
   s3_bucket = aws_s3_bucket.something-badabing-hello.id
   s3_key    = aws_s3_object.lambda_hello_world.key
-
-  timeout = 10
+  
   runtime = "nodejs12.x"
   handler = "index.handler"
 
