@@ -13,14 +13,14 @@ module.exports.handler = async (event, callback) => {
   let responseMessage = 'Hello, World!';
   console.log(process.env, 'db instance address!')
 
-  let createTable = `CREATE TABLE IF NOT EXISTS accounts (
-    user_id serial PRIMARY KEY,
-    name VARCHAR ( 50 ) UNIQUE NOT NULL,
-    created_on TIMESTAMP NOT NULL,
-          last_login TIMESTAMP 
-  )`
+  // let createTable = `CREATE TABLE IF NOT EXISTS accounts (
+  //   user_id serial PRIMARY KEY,
+  //   name VARCHAR ( 50 ) UNIQUE NOT NULL,
+  //   created_on TIMESTAMP NOT NULL,
+  //         last_login TIMESTAMP 
+  // )`
 
-  let getRecord = `SELECT * FROM "accounts" LIMIT 1;`
+  // let getRecord = `SELECT * FROM "accounts" LIMIT 1;`
 
   // let values = event.queryStringParameters['Name'] || 'nothing'
 
@@ -32,40 +32,40 @@ module.exports.handler = async (event, callback) => {
       else callback(null, 'Success');
     });
 
-    client.query(createTable, (err) => {
-      if (err) {
-        console.log(err.stack)
-      } else {
-        console.log('table created')
-      }
-    })
+    // client.query(createTable, (err) => {
+    //   if (err) {
+    //     console.log(err.stack)
+    //   } else {
+    //     console.log('table created')
+    //   }
+    // })
 
     console.log("Connected Successfully");
 
-    if (event.queryStringParameters && event.queryStringParameters['Name']) {
-      responseMessage = 'Hello, ' + event.queryStringParameters['Name'] + '!';
+    // if (event.queryStringParameters && event.queryStringParameters['Name']) {
+    //   responseMessage = 'Hello, ' + event.queryStringParameters['Name'] + '!';
 
-      let postRecord = `INSERT INTO accounts(name) VALUES (${event.queryStringParameters['Name']}) RETURNING *;`
+    //   let postRecord = `INSERT INTO accounts(name) VALUES (${event.queryStringParameters['Name']}) RETURNING *;`
 
-      client.query(postRecord, (err, res) => {
-        if (err) {
-          console.log(err.stack)
-        } else {
-          console.log(res.rows[0])
-        }
-      })
+    //   client.query(postRecord, (err, res) => {
+    //     if (err) {
+    //       console.log(err.stack)
+    //     } else {
+    //       console.log(res.rows[0])
+    //     }
+    //   })
       
-    }
+    // }
 
-    if (event.httpMethod['GET']) {
-      client.query(getRecord, (err, res) => {
-        if (err) {
-          console.log(err.stack)
-        } else {
-          console.log(res.rows[0])
-        }
-      })
-    }
+    // if (event.httpMethod['GET']) {
+    //   client.query(getRecord, (err, res) => {
+    //     if (err) {
+    //       console.log(err.stack)
+    //     } else {
+    //       console.log(res.rows[0])
+    //     }
+    //   })
+    // }
 
   } catch (err) {
 

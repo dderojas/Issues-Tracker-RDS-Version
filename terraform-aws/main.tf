@@ -14,8 +14,35 @@ provider "aws" {
   region = "us-west-2"
 }
 
+data "aws_vpc" "default" {
+ default = true
+}
+
+resource "aws_security_group" "web_server_sg_tf" {
+ name        = "web-server-sg-tf"
+ description = "Allow HTTPS to web server"
+ vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "HTTPS ingress"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_db_instance" "test_db" {
   allocated_storage   = 10
+  max_allocated_storage = 11
+  publicly_accessible = true
   db_name             = "mydb"
   engine              = "postgres"
   engine_version      = "15.2"
@@ -23,6 +50,7 @@ resource "aws_db_instance" "test_db" {
   username            = "don"
   password            = "dondavid"
   skip_final_snapshot = true
+  vpc_security_group_ids = [aws_security_group.web_server_sg_tf.id]
 }
 
 resource "aws_s3_bucket" "something-badabing-hello" {
