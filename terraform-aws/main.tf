@@ -18,6 +18,23 @@ data "aws_vpc" "default" {
  default = true
 }
 
+data "aws_subnets" "example" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+data "aws_subnet" "example" {
+  for_each = toset(data.aws_subnets.example.ids)
+  id       = each.value
+} // might not need this
+
+resource "aws_db_subnet_group" "test" {
+  name       = "test-db-subnets"
+  subnet_ids = [for s in data.aws_subnets.example.ids: s]
+}
+
 resource "aws_security_group" "web_server_sg_tf" {
  name        = "web-server-sg-tf"
  description = "Allow HTTPS to web server"
@@ -39,6 +56,37 @@ resource "aws_security_group" "web_server_sg_tf" {
   }
 }
 
+data "aws_internet_gateway" "default" {
+  filter {
+    name = "attachment.vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+resource "aws_route_table" "route_table_public" {
+  vpc_id = data.aws_vpc.default.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = data.aws_internet_gateway.default.internet_gateway_id
+  }
+}
+
+resource "aws_route_table_association" "route_table_association_public" {
+  subnet_id      = data.aws_subnets.example.ids[0]
+  route_table_id = aws_route_table.route_table_public.id
+}
+
+resource "aws_db_parameter_group" "test" {
+  name   = "test"
+  family = "postgres15"
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+}
+
 resource "aws_db_instance" "test_db" {
   allocated_storage   = 10
   max_allocated_storage = 11
@@ -51,6 +99,8 @@ resource "aws_db_instance" "test_db" {
   password            = "dondavid"
   skip_final_snapshot = true
   vpc_security_group_ids = [aws_security_group.web_server_sg_tf.id]
+  parameter_group_name = aws_db_parameter_group.test.name
+  # db_subnet_group_name = aws_db_subnet_group.test.name // error says already in same vpc?
 }
 
 resource "aws_s3_bucket" "something-badabing-hello" {
@@ -85,9 +135,15 @@ resource "aws_lambda_function" "hello_world" {
 
   source_code_hash = data.archive_file.lambda_hello_world.output_base64sha256
 
+  vpc_config {
+    security_group_ids = [aws_security_group.web_server_sg_tf.id]
+    subnet_ids = [for s in data.aws_subnets.example.ids: s]
+  }
+
   environment {
     variables = {
       DB_INSTANCE_ADDRESS = aws_db_instance.test_db.address
+      DB_INSTANCE_PASSWORD = aws_db_instance.test_db.password
     }
   }
 
@@ -118,10 +174,14 @@ resource "aws_iam_role" "lambda_exec" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_policy" {
-  role       = aws_iam_role.lambda_exec.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
+  for_each = toset([
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+  ])
 
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = each.key
+}
 
 resource "aws_apigatewayv2_api" "lambda" {
   name          = "serverless_lambda_gw"

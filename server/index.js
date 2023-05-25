@@ -1,37 +1,59 @@
 const { Client } = require('pg')
 
-const client = new Client({
-  user: 'don',
-  host: process.env.DB_INSTANCE_ADDRESS,
-  database: 'mydb',
-  password: 'dondavid',
-  port: 5432
-});
 
-module.exports.handler = async (event, callback) => {
+module.exports.handler = async (event, context, callback) => {
+  const client = new Client({
+    host: process.env.DB_INSTANCE_ADDRESS,
+    port: 5432,
+    database: 'mydb',
+    user: 'don',
+    password: process.env.DB_INSTANCE_PASSWORD,
+  });
   console.log('Event: ', event);
   let responseMessage = 'Hello, World!';
   console.log(process.env, 'db instance address!')
 
-  // let createTable = `CREATE TABLE IF NOT EXISTS accounts (
+  // let createTable = `CREATE TABLE IF NOT EXISTS testTable (
   //   user_id serial PRIMARY KEY,
   //   name VARCHAR ( 50 ) UNIQUE NOT NULL,
   //   created_on TIMESTAMP NOT NULL,
   //         last_login TIMESTAMP 
   // )`
 
-  // let getRecord = `SELECT * FROM "accounts" LIMIT 1;`
-
-  // let values = event.queryStringParameters['Name'] || 'nothing'
-
+  // console.log(callback(), 'callback???')
+  // console.log(context, 'context!!!')
   console.log(client, 'client info!')
 
   try {
-    client.connect((err) => {
-      if (err) callback(err);
-      else callback(null, 'Success');
-    });
+    // client.connect((err) => {
+    //   if (err) callback(err);
+    //   else callback(null, 'Success');
+    // });
 
+    // client.connect((err) => {
+    //   if (err) {
+    //     console.error('connection error', err.stack)
+    //   } else {
+    //     console.log('connected')
+    //   }
+    // })
+
+    // client.connect()
+    // .then(() => {
+    //   console.log('connected')
+    // })
+    // .catch((err) => {
+    //   console.error('connection error', err.stack)
+    // })
+
+    await client.connect()
+    // console.log(something, 'something!!!!')
+
+    // client.connect((err) => {
+    //   if (err) callback(err);
+    //   else callback(null, 'Success');
+    // });
+    
     // client.query(createTable, (err) => {
     //   if (err) {
     //     console.log(err.stack)
@@ -42,38 +64,13 @@ module.exports.handler = async (event, callback) => {
 
     console.log("Connected Successfully");
 
-    // if (event.queryStringParameters && event.queryStringParameters['Name']) {
-    //   responseMessage = 'Hello, ' + event.queryStringParameters['Name'] + '!';
-
-    //   let postRecord = `INSERT INTO accounts(name) VALUES (${event.queryStringParameters['Name']}) RETURNING *;`
-
-    //   client.query(postRecord, (err, res) => {
-    //     if (err) {
-    //       console.log(err.stack)
-    //     } else {
-    //       console.log(res.rows[0])
-    //     }
-    //   })
-      
-    // }
-
-    // if (event.httpMethod['GET']) {
-    //   client.query(getRecord, (err, res) => {
-    //     if (err) {
-    //       console.log(err.stack)
-    //     } else {
-    //       console.log(res.rows[0])
-    //     }
-    //   })
-    // }
-
   } catch (err) {
 
-      console.log("Failed to Connect Successfully");
+      console.log("Failed to Connect");
       throw err;
   }
 
-  client.end();
+  await client.end();
   
   return {
     statusCode: 200,
